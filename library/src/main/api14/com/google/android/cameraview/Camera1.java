@@ -21,9 +21,11 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Build;
 import android.support.v4.util.SparseArrayCompat;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -70,6 +72,8 @@ class Camera1 extends CameraViewImpl {
     private int mFlash;
 
     private int mDisplayOrientation;
+
+
 
     Camera1(Callback callback, PreviewImpl preview) {
         super(callback, preview);
@@ -320,6 +324,11 @@ class Camera1 extends CameraViewImpl {
         return r;
     }
 
+    private long area(Size size)
+    {
+        return size.getHeight()*size.getWidth();
+    }
+
     void adjustCameraParameters() {
         SortedSet<Size> sizes = mPreviewSizes.sizes(mAspectRatio);
         if (sizes == null) { // Not supported
@@ -329,8 +338,27 @@ class Camera1 extends CameraViewImpl {
         Size size = chooseOptimalSize(sizes);
 
         // Always re-apply camera parameters
-        // Largest picture size in this ratio
-        final Size pictureSize = mPictureSizes.sizes(mAspectRatio).first();
+
+        SortedSet<Size> availableSizeSet = mPictureSizes.sizes(mAspectRatio);
+
+        List<Size> availableSizes = new ArrayList<Size>(availableSizeSet);
+
+
+        long distance = Math.abs(area(availableSizes.get(0)) - requiredPixels);
+        int idx = 0;
+        for(int c = 1; c < availableSizes.size(); c++){
+            long cdistance = Math.abs(area(availableSizes.get(c)) - requiredPixels);
+            if(cdistance < distance){
+                idx = c;
+                distance = cdistance;
+            }
+        }
+
+        final Size pictureSize =  availableSizes.get(idx);
+
+
+        Log.i("Camera2", "picture size is " + pictureSize.getWidth() + ", " + pictureSize.getHeight());
+
         if (mShowingPreview) {
             mCamera.stopPreview();
         }

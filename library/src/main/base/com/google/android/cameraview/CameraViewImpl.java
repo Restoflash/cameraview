@@ -26,6 +26,8 @@ abstract class CameraViewImpl {
 
     protected final PreviewImpl mPreview;
 
+    protected long requiredPixels = 2000000;
+
     CameraViewImpl(Callback callback, PreviewImpl preview) {
         mCallback = callback;
         mPreview = preview;
@@ -68,6 +70,11 @@ abstract class CameraViewImpl {
     abstract void takePicture();
 
     abstract void setDisplayOrientation(int displayOrientation);
+
+    public void setRequiredPixels(long requiredPixels)
+    {
+        this.requiredPixels = requiredPixels;
+    }
 
     interface Callback {
 

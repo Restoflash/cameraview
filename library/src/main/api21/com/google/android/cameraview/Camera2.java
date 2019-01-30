@@ -37,7 +37,9 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -46,6 +48,7 @@ import java.util.SortedSet;
 class Camera2 extends CameraViewImpl {
 
     private static final String TAG = "Camera2";
+
 
     private static final SparseIntArray INTERNAL_FACINGS = new SparseIntArray();
 
@@ -443,13 +446,37 @@ class Camera2 extends CameraViewImpl {
             mPictureSizes.add(new Size(size.getWidth(), size.getHeight()));
         }
     }
+    private long area(Size size)
+    {
+        return size.getHeight()*size.getWidth();
+    }
 
     private void prepareImageReader() {
         if (mImageReader != null) {
             mImageReader.close();
         }
-        Size largest = mPictureSizes.sizes(mAspectRatio).last();
-        mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
+
+
+        SortedSet<Size> availableSizeSet = mPictureSizes.sizes(mAspectRatio);
+
+        List<Size> availableSizes = new ArrayList<Size>(availableSizeSet);
+
+
+        long distance = Math.abs(area(availableSizes.get(0)) - requiredPixels);
+        int idx = 0;
+        for(int c = 1; c < availableSizes.size(); c++){
+            long cdistance = Math.abs(area(availableSizes.get(c)) - requiredPixels);
+            if(cdistance < distance){
+                idx = c;
+                distance = cdistance;
+            }
+        }
+
+        final Size pictureSize =  availableSizes.get(idx);
+
+        Log.i("Camera2", "picture size is " + pictureSize.getWidth() + ", " + pictureSize.getHeight());
+
+        mImageReader = ImageReader.newInstance(pictureSize.getWidth(), pictureSize.getHeight(),
                 ImageFormat.JPEG, /* maxImages */ 2);
         mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, null);
     }
